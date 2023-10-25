@@ -36,9 +36,6 @@ from axolotl.prompters import (
     ReflectAlpacaPrompter,
     SummarizeTLDRPrompter,
 )
-
-from axolotl.prompt_strategies.orcamini import OrcaMiniPrompter
-
 from axolotl.utils.dict import DictDefault
 from axolotl.utils.distributed import is_main_process, zero_first
 from axolotl.utils.trainer import (
