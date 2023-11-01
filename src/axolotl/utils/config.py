@@ -49,6 +49,8 @@ def normalize_config(cfg):
     cfg.batch_size = (
         cfg.batch_size or cfg.micro_batch_size * cfg.gradient_accumulation_steps
     )
+    if cfg.eval_batch_size is None:
+        cfg.eval_batch_size = cfg.micro_batch_size
     cfg.world_size = int(os.environ.get("WORLD_SIZE", 1))
     cfg.local_rank = int(os.environ.get("LOCAL_RANK", 0))
     cfg.eval_table_size = cfg.eval_table_size or 0
@@ -74,6 +76,11 @@ def normalize_config(cfg):
         cfg.torch_dtype = torch.float16
     else:
         cfg.torch_dtype = torch.float32
+
+    cfg.dataset_processes = cfg.dataset_processes or os.cpu_count()
+
+    if not cfg.base_model_config:
+        cfg.base_model_config = cfg.base_model
 
     model_config = load_model_config(cfg)
     cfg.model_config_type = model_config.model_type
@@ -115,6 +122,9 @@ def normalize_config(cfg):
         or (cfg.model_type and "mistral" in cfg.model_type.lower())
     )
 
+    if isinstance(cfg.learning_rate, str):
+        cfg.learning_rate = float(cfg.learning_rate)
+
     log_gpu_memory_usage(LOG, "baseline", cfg.device)
 
 
@@ -155,6 +165,11 @@ def validate_config(cfg):
             "batch_size is not recommended. Please use gradient_accumulation_steps instead.",
             "To calculate the equivalent gradient_accumulation_steps, divide batch_size / micro_batch_size / number of gpus.",
         )
+    if cfg.eval_batch_size != cfg.micro_batch_size:
+        LOG.warning(
+            "eval_batch_size != micro_batch_size. This can lead to VRAM instability."
+        )
+
     if cfg.load_4bit:
         raise ValueError("cfg.load_4bit parameter has been deprecated")
 
@@ -180,8 +195,14 @@ def validate_config(cfg):
             if not cfg.load_in_4bit:
                 raise ValueError("Require cfg.load_in_4bit to be True for qlora")
 
+        if cfg.flash_attn_fuse_qkv or cfg.flash_attn_fuse_mlp:
+            raise ValueError("Fused modules are not supported with QLoRA")
+
     if not cfg.load_in_8bit and cfg.adapter == "lora":
         LOG.warning("We recommend setting `load_in_8bit: true` for LORA finetuning")
+
+    if cfg.adapter == "lora" and (cfg.flash_attn_fuse_qkv or cfg.flash_attn_fuse_mlp):
+        raise ValueError("Fused modules are not supported with LoRA")
 
     if cfg.relora_steps:
         if cfg.adapter not in ("lora", "qlora"):
@@ -195,6 +216,9 @@ def validate_config(cfg):
 
         if cfg.lr_scheduler == "one_cycle":
             raise ValueError("ReLoRA is not compatible with the one_cycle scheduler")
+
+        if cfg.flash_attn_fuse_qkv or cfg.flash_attn_fuse_mlp:
+            raise ValueError("Fused modules are not supported with ReLoRA")
 
     if cfg.trust_remote_code:
         LOG.warning(
@@ -293,6 +317,8 @@ def validate_config(cfg):
 
     if cfg.datasets:
         for idx, ds_cfg in enumerate(cfg.datasets):
+            if not ds_cfg.type:
+                continue
             if ds_cfg.type == "sharegpt:chat":
                 LOG.warning(
                     PendingDeprecationWarning(
@@ -326,6 +352,21 @@ def validate_config(cfg):
     if cfg.val_set_size == 0 and (cfg.eval_steps or cfg.evaluation_strategy):
         raise ValueError(
             "eval_steps and evaluation_strategy are not supported with val_set_size == 0"
+        )
+
+    if (
+        cfg.sample_packing
+        and cfg.eval_table_size
+        and cfg.eval_sample_packing is not False
+    ):
+        raise ValueError(
+            "eval_table_size and eval_sample_packing are not supported together with sample_packing. Please set 'eval_sample_packing' to false."
+        )
+
+    if not cfg.adapter and (cfg.load_in_8bit or cfg.load_in_4bit):
+        raise ValueError(
+            "load_in_8bit and load_in_4bit are not supported without setting an adapter."
+            "If you want to full finetune, please turn off load_in_8bit and load_in_4bit."
         )
 
     # TODO

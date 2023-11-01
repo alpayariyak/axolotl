@@ -1,12 +1,11 @@
 base_model: huggyllama/llama-7b
-base_model_config: huggyllama/llama-7b
 model_type: LlamaForCausalLM
 tokenizer_type: LlamaTokenizer
 load_in_8bit: false
 datasets:
   - path: openaccess-ai-collective/jeopardy
     type: jeopardy
-dataset_prepared_path: last_run_prepared
+dataset_prepared_path:
 val_set_size: 0.02
 adapter:
 lora_model_dir:
@@ -25,7 +24,7 @@ wandb_log_model:
 output_dir: ./jeopardy-bot-7b
 gradient_accumulation_steps: 1
 micro_batch_size: 1
-num_epochs: 3
+num_epochs: 4
 optimizer: adamw_bnb_8bit
 torchdistx_path:
 lr_scheduler: cosine

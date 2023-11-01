@@ -1,5 +1,4 @@
 base_model: mistralai/Mistral-7B-v0.1
-base_model_config: mistralai/Mistral-7B-v0.1
 model_type: MistralForCausalLM
 tokenizer_type: LlamaTokenizer
 is_mistral_derived_model: true
@@ -11,13 +10,13 @@ strict: false
 datasets:
   - path: mhenrichsen/alpaca_2k_test
     type: alpaca
-dataset_prepared_path: last_run_prepared
+dataset_prepared_path:
 val_set_size: 0.01
 output_dir: ./out
 
 sequence_len: 8192
-sample_packing:
-pad_to_sequence_len:
+sample_packing: true
+pad_to_sequence_len: true
 
 wandb_project:
 wandb_entity:
@@ -27,10 +26,10 @@ wandb_log_model:
 
 gradient_accumulation_steps: 4
 micro_batch_size: 2
-num_epochs: 3
+num_epochs: 4
 optimizer: adamw_bnb_8bit
 lr_scheduler: cosine
-learning_rate: 0.0002
+learning_rate: 0.000005
 
 train_on_inputs: false
 group_by_length: false
@@ -47,8 +46,8 @@ xformers_attention:
 flash_attention: true
 
 warmup_steps: 10
-eval_steps: 20
-eval_table_size: 5
+eval_steps: 0.05
+eval_table_size:
 eval_table_max_new_tokens: 128
 save_steps:
 debug:

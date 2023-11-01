@@ -1,5 +1,4 @@
 base_model: NousResearch/Llama-2-7b-hf
-base_model_config: NousResearch/Llama-2-7b-hf
 model_type: LlamaForCausalLM
 tokenizer_type: LlamaTokenizer
 is_llama_derived_model: true
@@ -11,7 +10,7 @@ strict: false
 datasets:
   - path: teknium/GPT4-LLM-Cleaned
     type: alpaca
-dataset_prepared_path: last_run_prepared
+dataset_prepared_path:
 val_set_size: 0.01
 output_dir: ./relora-out
 
@@ -41,7 +40,7 @@ wandb_log_model:
 
 gradient_accumulation_steps: 4
 micro_batch_size: 4
-num_epochs: 3
+num_epochs: 4
 optimizer: adamw_bnb_8bit
 lr_scheduler: cosine
 learning_rate: 0.0002
@@ -61,7 +60,7 @@ xformers_attention:
 flash_attention: true
 
 warmup_steps: 10
-eval_steps: 20
+eval_steps: 0.05
 save_steps: 50
 debug:
 deepspeed:

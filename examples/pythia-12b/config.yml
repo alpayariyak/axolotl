@@ -1,5 +1,4 @@
 base_model: EleutherAI/pythia-12b-deduped
-base_model_config: EleutherAI/pythia-12b-deduped
 base_model_ignore_patterns: pytorch*  # prefer safetensors
 model_type: GPTNeoXForCausalLM
 tokenizer_type: AutoTokenizer
@@ -10,7 +9,7 @@ device_map: auto
 datasets:
   - path: vicgalle/alpaca-gpt4
     type: alpaca
-dataset_prepared_path: last_run_prepared
+dataset_prepared_path:
 val_set_size: 0.05
 adapter:
 lora_model_dir:

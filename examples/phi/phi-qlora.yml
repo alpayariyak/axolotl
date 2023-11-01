@@ -1,5 +1,4 @@
 base_model: microsoft/phi-1_5
-base_model_config: microsoft/phi-1_5
 model_type: AutoModelForCausalLM
 tokenizer_type: AutoTokenizer
 is_llama_derived_model: false
@@ -13,7 +12,7 @@ datasets:
   - path: garage-bAInd/Open-Platypus
     type: alpaca
 
-dataset_prepared_path: last_run_prepared
+dataset_prepared_path:
 val_set_size: 0.05
 output_dir: ./phi-sft-out
 

@@ -1,5 +1,4 @@
 base_model: cerebras/Cerebras-GPT-1.3B
-base_model_config: cerebras/Cerebras-GPT-1.3B
 load_in_8bit: false
 load_in_4bit: true
 strict: false
@@ -7,7 +6,7 @@ push_dataset_to_hub:
 datasets:
   - path: teknium/GPT4-LLM-Cleaned
     type: alpaca
-dataset_prepared_path: last_run_prepared
+dataset_prepared_path:
 val_set_size: 0.01
 adapter: qlora
 lora_model_dir:
@@ -50,7 +49,7 @@ flash_attention:
 gptq_groupsize:
 gptq_model_v1:
 warmup_steps: 10
-eval_steps: 20
+eval_steps: 0.05
 save_steps:
 debug:
 deepspeed:

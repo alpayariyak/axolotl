@@ -1,6 +1,7 @@
 """
 CLI to run training on a model
 """
+import logging
 from pathlib import Path
 
 import fire
@@ -16,6 +17,8 @@ from axolotl.cli import (
 from axolotl.common.cli import TrainerCliArgs
 from axolotl.train import train
 
+LOG = logging.getLogger("axolotl.cli.train")
+
 
 def do_cli(config: Path = Path("examples/"), **kwargs):
     # pylint: disable=duplicate-code
@@ -27,10 +30,7 @@ def do_cli(config: Path = Path("examples/"), **kwargs):
     parsed_cli_args, _ = parser.parse_args_into_dataclasses(
         return_remaining_strings=True
     )
-
     dataset_meta = load_datasets(cfg=parsed_cfg, cli_args=parsed_cli_args)
-    if parsed_cli_args.prepare_ds_only:
-        return
     train(cfg=parsed_cfg, cli_args=parsed_cli_args, dataset_meta=dataset_meta)
 
 

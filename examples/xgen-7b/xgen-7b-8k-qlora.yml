@@ -1,7 +1,6 @@
 # An example finetuning Saleforce's XGen-7b model with 8k context using qlora
 # on Tim Dettmer's Guanaco dataset.
 base_model: Salesforce/xgen-7b-8k-base
-base_model_config: Salesforce/xgen-7b-8k-base
 trust_remote_code: true
 model_type: AutoModelForCausalLM
 tokenizer_type: AutoTokenizer
@@ -16,7 +15,7 @@ datasets:
     data_files:
       - openassistant_best_replies_train.jsonl
     type: "completion"
-dataset_prepared_path: last_run_prepared
+dataset_prepared_path:
 val_set_size: 0.01
 # enable QLoRA
 adapter: qlora
@@ -52,7 +51,7 @@ output_dir: ./qlora-out
 # decrease if OOM, increase for max VRAM utilization
 micro_batch_size: 1
 gradient_accumulation_steps: 1
-num_epochs: 3
+num_epochs: 4
 # Optimizer for QLoRA
 optimizer: paged_adamw_32bit
 torchdistx_path:

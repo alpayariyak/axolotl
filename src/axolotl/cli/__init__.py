@@ -51,7 +51,7 @@ def print_axolotl_text_art(suffix=None):
 
 
 def get_multi_line_input() -> Optional[str]:
-    print("Give me an instruction (Ctrl + D to finish): ")
+    print("Give me an instruction (Ctrl + D to submit): ")
     instruction = ""
     for line in sys.stdin:
         instruction += line  # pylint: disable=consider-using-join
@@ -194,6 +194,7 @@ def load_cfg(config: Path = Path("examples/"), **kwargs):
     # load the config from the yaml file
     with open(config, encoding="utf-8") as file:
         cfg: DictDefault = DictDefault(yaml.safe_load(file))
+    cfg.axolotl_config_path = config
     # if there are any options passed in the cli, if it is something that seems valid from the yaml,
     # then overwrite the value
     cfg_keys = cfg.keys()
@@ -221,7 +222,9 @@ def load_datasets(
 ) -> TrainDatasetMeta:
     tokenizer = load_tokenizer(cfg)
 
-    train_dataset, eval_dataset, total_num_steps = prepare_dataset(cfg, tokenizer)
+    train_dataset, eval_dataset, total_num_steps, prompters = prepare_dataset(
+        cfg, tokenizer
+    )
 
     if cli_args.debug or cfg.debug:
         LOG.info("check_dataset_labels...")
@@ -236,6 +239,10 @@ def load_datasets(
             num_examples=cli_args.debug_num_examples,
             text_only=cli_args.debug_text_only,
         )
+
+        LOG.info("printing prompters...")
+        for prompter in prompters:
+            LOG.info(prompter)
 
     return TrainDatasetMeta(
         train_dataset=train_dataset,

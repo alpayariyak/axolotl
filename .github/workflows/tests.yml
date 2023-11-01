@@ -6,9 +6,11 @@ on:
       - "main"
     paths:
       - '**.py'
+      - 'requirements.txt'
   pull_request:
       paths:
        - '**.py'
+       - 'requirements.txt'
   workflow_dispatch:
 
 jobs:
@@ -69,6 +71,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          pip3 uninstall -y transformers accelerate
           pip3 install -U -e .[flash-attn]
           pip3 install -r requirements-tests.txt
 

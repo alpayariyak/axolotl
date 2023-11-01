@@ -1,5 +1,4 @@
 base_model: tiiuae/falcon-7b
-base_model_config: tiiuae/falcon-7b
 trust_remote_code: true
 model_type: AutoModelForCausalLM
 tokenizer_type: AutoTokenizer
@@ -12,7 +11,7 @@ push_dataset_to_hub:
 datasets:
   - path: teknium/GPT4-LLM-Cleaned
     type: alpaca:chat
-dataset_prepared_path: last_run_prepared
+dataset_prepared_path:
 val_set_size: 0.01
 adapter:
 lora_model_dir:
