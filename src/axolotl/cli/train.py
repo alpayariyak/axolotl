@@ -25,7 +25,7 @@ def do_cli(config: Path = Path("examples/"), **kwargs):
     # pylint: disable=duplicate-code
     print_axolotl_text_art()
     if "runpod_job_id" in kwargs:
-        os.environ["RUNPOD_JOB_ID"] = kwargs["runpod_job_id"]
+        os.environ["RUNPOD_JOB_ID"] = str(kwargs["runpod_job_id"])
         print(f"RUNPOD_JOB_ID: {os.environ['RUNPOD_JOB_ID']}")
     parsed_cfg = load_cfg(config, **kwargs)
     check_accelerate_default_config()
