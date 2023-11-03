@@ -43,6 +43,7 @@ if TYPE_CHECKING:
 LOG = logging.getLogger("axolotl.callbacks")
 IGNORE_INDEX = -100
 
+
 def rewrite_logs(d):
     new_d = {}
     eval_prefix = "eval_"
@@ -65,12 +66,13 @@ class RunPodCallback(TrainerCallback):
     Logs are sent in JSON format with different keys for different types of information.
     """
 
-    def __init__(self, job_id):
+    def __init__(self, job_id, verbose=False):
         """
         Initialize the RunPodCallback with the job ID for RunPod updates.
         """
         self.job_id = job_id
         self.total_steps = None
+        self.verbose = verbose
 
     def _send_update(self, message_type, message_content):
         """
@@ -81,6 +83,8 @@ class RunPodCallback(TrainerCallback):
             "content": message_content
         })
         runpod.serverless.progress_update(self.job_id, message)
+        if self.verbose:
+            print(message)
 
     def on_train_begin(self, args, state, control, **kwargs):
         """
@@ -120,6 +124,7 @@ class RunPodCallback(TrainerCallback):
         """
         if state.is_world_process_zero:
             self._send_update("status", "Training completed.")
+
 
 class EvalFirstStepCallback(
     TrainerCallback
@@ -512,8 +517,8 @@ def log_prediction_callback_factory(trainer: Trainer, tokenizer):
                             if start == end:
                                 continue
 
-                            input_ids = input_ids_all[start : end + 1]
-                            labels = labels_all[start : end + 1]
+                            input_ids = input_ids_all[start: end + 1]
+                            labels = labels_all[start: end + 1]
 
                             tokens_without_loss = labels == IGNORE_INDEX
                             tokens_with_loss = labels != IGNORE_INDEX
@@ -529,7 +534,7 @@ def log_prediction_callback_factory(trainer: Trainer, tokenizer):
                             completion_token_ids_list.append(completion_token_ids)
 
                             pred_step_token_ids = logits_to_tokens(
-                                logits[start : end + 1]
+                                logits[start: end + 1]
                             )[tokens_with_loss]
                             pred_step_token_ids_list.append(pred_step_token_ids)
 
@@ -557,8 +562,8 @@ def log_prediction_callback_factory(trainer: Trainer, tokenizer):
                         prompt_token_ids_list, prediction_all_tokens
                     ):
                         prediction_without_prompt_tokens = prediction_tokens[
-                            len(prompt_token_ids) :
-                        ]
+                                                           len(prompt_token_ids):
+                                                           ]
                         prediction_without_prompt_tokens_list.append(
                             prediction_without_prompt_tokens
                         )

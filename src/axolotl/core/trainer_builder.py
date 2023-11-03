@@ -26,6 +26,7 @@ from axolotl.monkeypatch.relora import ReLoRACallback, ReLoRAScheduler
 from axolotl.utils.callbacks import (
     EvalFirstStepCallback,
     GPUStatsCallback,
+    RunPodCallback,
     SaveAxolotlConfigtoWandBCallback,
     SaveBetterTransformerModelCallback,
     bench_eval_callback_factory,
@@ -387,6 +388,11 @@ class HFCausalTrainerBuilder(TrainerBuilderBase):
             and self.model.use_bettertransformer is True
         ):
             callbacks.append(SaveBetterTransformerModelCallback)
+
+        runpod_job_id = os.getenv('RUNPOD_JOB_ID')
+        if runpod_job_id:
+            # If the variable is set, add the RunPodCallback to the callbacks list
+            callbacks.append(RunPodCallback(runpod_job_id))
 
         if self.cfg.use_wandb:
             callbacks.append(
