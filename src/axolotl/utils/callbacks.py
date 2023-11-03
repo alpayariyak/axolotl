@@ -70,7 +70,7 @@ class RunPodCallback(TrainerCallback):
         """
         Initialize the RunPodCallback with the job ID for RunPod updates.
         """
-        self.job_id = job_id
+        self.job_id = {"id":job_id}
         self.total_steps = None
         self.verbose = verbose
 
