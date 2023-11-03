@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 import os
 from typing import TYPE_CHECKING, Dict, List
-
+import runpod.serverless
 import evaluate
+import json
 import numpy as np
 import pandas as pd
 import torch
@@ -42,6 +43,83 @@ if TYPE_CHECKING:
 LOG = logging.getLogger("axolotl.callbacks")
 IGNORE_INDEX = -100
 
+def rewrite_logs(d):
+    new_d = {}
+    eval_prefix = "eval_"
+    eval_prefix_len = len(eval_prefix)
+    test_prefix = "test_"
+    test_prefix_len = len(test_prefix)
+    for k, v in d.items():
+        if k.startswith(eval_prefix):
+            new_d["eval/" + k[eval_prefix_len:]] = v
+        elif k.startswith(test_prefix):
+            new_d["test/" + k[test_prefix_len:]] = v
+        else:
+            new_d["train/" + k] = v
+    return new_d
+
+
+class RunPodCallback(TrainerCallback):
+    """
+    A `TrainerCallback` that sends logs and progress updates to RunPod.
+    Logs are sent in JSON format with different keys for different types of information.
+    """
+
+    def __init__(self, job_id):
+        """
+        Initialize the RunPodCallback with the job ID for RunPod updates.
+        """
+        self.job_id = job_id
+        self.total_steps = None
+
+    def _send_update(self, message_type, message_content):
+        """
+        Sends a structured JSON message to RunPod.
+        """
+        message = json.dumps({
+            "type": message_type,
+            "content": message_content
+        })
+        runpod.serverless.progress_update(self.job_id, message)
+
+    def on_train_begin(self, args, state, control, **kwargs):
+        """
+        Called at the beginning of training, before any steps have occurred.
+        """
+        if state.is_world_process_zero:
+            self.total_steps = kwargs.get("total_num_training_steps", state.max_steps)
+            self._send_update("status", "Training has begun.")
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        """
+        Called after any `Trainer` logs are created.
+        """
+        if state.is_world_process_zero:
+            formatted_logs = rewrite_logs(logs)
+            progress_content = {
+                "step": state.global_step,
+                "total_steps": self.total_steps,
+                "logs": formatted_logs
+            }
+            self._send_update("progress", progress_content)
+
+    def on_epoch_end(self, args, state, control, **kwargs):
+        """
+        Called at the end of an epoch.
+        """
+        if state.is_world_process_zero:
+            epoch_content = {
+                "epoch": state.epoch,
+                "total_epochs": args.num_train_epochs
+            }
+            self._send_update("epoch_end", epoch_content)
+
+    def on_train_end(self, args, state, control, **kwargs):
+        """
+        Called at the end of training.
+        """
+        if state.is_world_process_zero:
+            self._send_update("status", "Training completed.")
 
 class EvalFirstStepCallback(
     TrainerCallback
