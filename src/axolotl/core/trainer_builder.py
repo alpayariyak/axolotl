@@ -391,6 +391,7 @@ class HFCausalTrainerBuilder(TrainerBuilderBase):
 
         runpod_job_id = os.getenv('RUNPOD_JOB_ID')
         if runpod_job_id:
+            print("RunPodCallback enabled")
             # If the variable is set, add the RunPodCallback to the callbacks list
             callbacks.append(RunPodCallback(runpod_job_id))
 
