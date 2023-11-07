@@ -87,7 +87,6 @@ class RunPodCallback(TrainerCallback):
             "content": message_content
         })
         runpod.serverless.progress_update(self.job_id, message)
-        print(message)
 
     def on_train_begin(self, args, state, control, **kwargs):
         """
