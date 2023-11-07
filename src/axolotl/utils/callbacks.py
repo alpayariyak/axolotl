@@ -45,19 +45,19 @@ IGNORE_INDEX = -100
 
 
 def rewrite_logs(d):
-    new_d = {}
+    new_d = {'train': {}, 'eval': {}, 'test': {}}
     eval_prefix = "eval_"
-    eval_prefix_len = len(eval_prefix)
     test_prefix = "test_"
-    test_prefix_len = len(test_prefix)
     for k, v in d.items():
         if k.startswith(eval_prefix):
-            new_d["eval/" + k[eval_prefix_len:]] = v
+            new_d['eval'][k[len(eval_prefix):]] = v
         elif k.startswith(test_prefix):
-            new_d["test/" + k[test_prefix_len:]] = v
+            new_d['test'][k[len(test_prefix):]] = v
         else:
-            new_d["train/" + k] = v
+            new_d['train'][k] = v
     return new_d
+
+
 
 
 class RunPodCallback(TrainerCallback):
@@ -89,8 +89,7 @@ class RunPodCallback(TrainerCallback):
             "content": message_content
         })
         runpod.serverless.progress_update(self.job_id, message)
-        if self.verbose:
-            print(message)
+        print(message)
 
     def on_train_begin(self, args, state, control, **kwargs):
         """
@@ -101,7 +100,7 @@ class RunPodCallback(TrainerCallback):
         if state.is_world_process_zero:
             self.training_start_time = time.time()
             self.total_tracked_steps = kwargs.get("total_num_training_steps", state.max_steps)
-            self._send_update("status", "Training has begun. WandB: {}".format(self.wandb_run_url))
+            self._send_update("status", {"WandB":self.wandb_run_url, "message":"Training started."})
             self.last_logged_step = state.global_step
 
     def on_log(self, args, state, control, logs=None, **kwargs):
@@ -123,9 +122,11 @@ class RunPodCallback(TrainerCallback):
             progress_content = {
                 "step": self.current_tracked_steps,
                 "total_steps": self.total_tracked_steps,
-                "training_time_elapsed": training_time_elapsed,
-                "time_remaining": time_remaining,
-                "logs": formatted_logs
+                "training_time_elapsed_seconds": training_time_elapsed,
+                "time_remaining_seconds": time_remaining,
+                 "train": formatted_logs['train'],
+                "eval": formatted_logs['eval'],
+                "test": formatted_logs['test']
             }
             self._send_update("progress", progress_content)
 
