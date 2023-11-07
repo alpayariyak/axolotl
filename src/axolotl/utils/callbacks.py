@@ -70,6 +70,7 @@ class RunPodCallback(TrainerCallback):
         """
         Initialize the RunPodCallback with the job ID for RunPod updates.
         """
+        self.wandb_run_url = None
         self.last_logged_step = 0
         self.job_id = {"id":job_id}
         self.total_tracked_steps = None
@@ -95,10 +96,12 @@ class RunPodCallback(TrainerCallback):
         """
         Called at the beginning of training, before any steps have occurred.
         """
+        if wandb.run:
+            self.wandb_run_url = wandb.run.get_url()
         if state.is_world_process_zero:
             self.training_start_time = time.time()
             self.total_tracked_steps = kwargs.get("total_num_training_steps", state.max_steps)
-            self._send_update("status", "Training has begun.")
+            self._send_update("status", "Training has begun. WandB: {}".format(self.wandb_run_url))
             self.last_logged_step = state.global_step
 
     def on_log(self, args, state, control, logs=None, **kwargs):
