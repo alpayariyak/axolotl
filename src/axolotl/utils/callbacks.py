@@ -116,8 +116,10 @@ class RunPodCallback(TrainerCallback):
             progress_content = {
                 "step": state.global_step,
                 "total_steps": self.total_tracked_steps,
-                "training_time_elapsed": training_time_elapsed,
-                "time_remaining": time_remaining
+                "time_seconds": {
+                    "elapsed": training_time_elapsed,
+                    "remaining": time_remaining
+                }
             }
             self._send_update("progress", progress_content)
 
