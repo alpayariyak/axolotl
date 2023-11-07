@@ -1,7 +1,7 @@
 """Callbacks for Trainer class"""
 
 from __future__ import annotations
-
+import time
 import logging
 import os
 from typing import TYPE_CHECKING, Dict, List
@@ -70,9 +70,14 @@ class RunPodCallback(TrainerCallback):
         """
         Initialize the RunPodCallback with the job ID for RunPod updates.
         """
+        self.last_logged_step = 0
         self.job_id = {"id":job_id}
-        self.total_steps = None
+        self.total_tracked_steps = None
+        self.current_tracked_steps = 0
         self.verbose = verbose
+        self.training_start_time = None
+        self.eval_start_time = 0
+        self.total_eval_time = 0
 
     def _send_update(self, message_type, message_content):
         """
@@ -91,21 +96,46 @@ class RunPodCallback(TrainerCallback):
         Called at the beginning of training, before any steps have occurred.
         """
         if state.is_world_process_zero:
-            self.total_steps = kwargs.get("total_num_training_steps", state.max_steps)
+            self.training_start_time = time.time()
+            self.total_tracked_steps = kwargs.get("total_num_training_steps", state.max_steps)
             self._send_update("status", "Training has begun.")
+            self.last_logged_step = state.global_step
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         """
         Called after any `Trainer` logs are created.
         """
+        current_time = time.time()
+        # Calculate the number of steps since the last log
+        steps_since_last_log = state.global_step - self.last_logged_step
+        self.current_tracked_steps += steps_since_last_log  # Increment the step count
+        self.last_logged_step = state.global_step  # Update the last logged step
+
         if state.is_world_process_zero:
+            # Subtract evaluation time from total elapsed time to get training time
+            training_time_elapsed = current_time - self.training_start_time - self.total_eval_time
             formatted_logs = rewrite_logs(logs)
+            time_per_step = training_time_elapsed / self.current_tracked_steps
+            time_remaining = time_per_step * (self.total_tracked_steps - self.current_tracked_steps)
             progress_content = {
-                "step": state.global_step,
-                "total_steps": self.total_steps,
+                "step": self.current_tracked_steps,
+                "total_steps": self.total_tracked_steps,
+                "training_time_elapsed": training_time_elapsed,
+                "time_remaining": time_remaining,
                 "logs": formatted_logs
             }
             self._send_update("progress", progress_content)
+
+    def on_evaluate(self, args, state, control, **kwargs):
+        """
+        Called at the beginning and end of evaluation.
+        """
+        if kwargs["evaluation"] == "start":
+            # Start the evaluation timer
+            self.eval_start_time = time.time()
+        elif kwargs["evaluation"] == "end":
+            # Stop the evaluation timer and update the total evaluation time
+            self.total_eval_time += time.time() - self.eval_start_time
 
     def on_epoch_end(self, args, state, control, **kwargs):
         """
