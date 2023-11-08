@@ -77,6 +77,7 @@ class RunPodCallback(TrainerCallback):
         self.training_start_time = time.time()
         self.total_eval_time = 0
         self.last_log_time = time.time()
+        self.metrics = {}
 
     def _send_update(self, message_type, message_content):
         """
@@ -100,7 +101,7 @@ class RunPodCallback(TrainerCallback):
                 "eval": formatted_logs['eval'],
                 "test": formatted_logs['test']
             }
-            self._send_update("train_eval_test_logs", progress_content)
+            self.metrics = progress_content
 
     def on_train_begin(self, args, state, control, **kwargs):
         """
@@ -134,6 +135,7 @@ class RunPodCallback(TrainerCallback):
                     "elapsed": training_time_elapsed,
                     "remaining": time_remaining
                 },
+                "metrics": self.metrics,
                 "wandb": self.wandb_run_url,
             }
             self._send_update("step_progress", progress_content)
