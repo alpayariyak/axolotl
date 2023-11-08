@@ -88,6 +88,20 @@ class RunPodCallback(TrainerCallback):
         })
         runpod.serverless.progress_update(self.job_id, message)
 
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        """
+        Called after any `Trainer` logs are created.
+        """
+
+        if state.is_world_process_zero:
+            formatted_logs = rewrite_logs(logs)
+            progress_content = {
+                "train": formatted_logs['train'],
+                "eval": formatted_logs['eval'],
+                "test": formatted_logs['test']
+            }
+            self._send_update("train_eval_test_logs", progress_content)
+
     def on_train_begin(self, args, state, control, **kwargs):
         """
         Called at the beginning of training, before any steps have occurred.
@@ -119,9 +133,10 @@ class RunPodCallback(TrainerCallback):
                 "time_seconds": {
                     "elapsed": training_time_elapsed,
                     "remaining": time_remaining
-                }
+                },
+                "wandb": self.wandb_run_url,
             }
-            self._send_update("progress", progress_content)
+            self._send_update("step_progress", progress_content)
 
             # Update the last log time
             self.last_log_time = current_time
