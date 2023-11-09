@@ -64,7 +64,7 @@ class RunPodCallback(TrainerCallback):
     Logs are sent in JSON format with different keys for different types of information.
     """
 
-    def __init__(self, job_id, verbose=False):
+    def __init__(self, job_id, verbose=False, use_betterstack=True):
         """
         Initialize the RunPodCallback with the job ID for RunPod updates.
         """
@@ -78,16 +78,14 @@ class RunPodCallback(TrainerCallback):
         self.total_eval_time = 0
         self.last_log_time = time.time()
         self.metrics = {}
+        self.logger = runpod.RunPodLogger()
 
-    def _send_update(self, message_type, message_content):
+    def _send_update(self, message_content):
         """
         Sends a structured JSON message to RunPod.
         """
-        message = json.dumps({
-            "type": message_type,
-            "content": message_content
-        })
-        runpod.serverless.progress_update(self.job_id, message)
+        message = json.dumps(message_content)
+        self.logger.info(message, job_id=self.job_id)
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         """
@@ -112,7 +110,6 @@ class RunPodCallback(TrainerCallback):
         if state.is_world_process_zero:
             self.training_start_time = time.time()
             self.total_tracked_steps = kwargs.get("total_num_training_steps", state.max_steps)
-            self._send_update("status", {"WandB": self.wandb_run_url, "message": "Training started."})
             self.last_logged_step = state.global_step
 
     def on_step_end(self, args, state, control, **kwargs):
@@ -138,8 +135,7 @@ class RunPodCallback(TrainerCallback):
                 "metrics": self.metrics,
                 "wandb": self.wandb_run_url,
             }
-            self._send_update("step_progress", progress_content)
-
+            self._send_update(progress_content)
             # Update the last log time
             self.last_log_time = current_time
 
@@ -147,12 +143,12 @@ class RunPodCallback(TrainerCallback):
         # Evaluation completed, update the total evaluation time
         self.total_eval_time += time.time() - self.last_log_time
 
-    def on_train_end(self, args, state, control, **kwargs):
-        """
-        Called at the end of training.
-        """
-        if state.is_world_process_zero:
-            self._send_update("status", "Training completed.")
+    # def on_train_end(self, args, state, control, **kwargs):
+    #     """
+    #     Called at the end of training.
+    #     """
+    #     if state.is_world_process_zero:
+    #         self._send_update("status", "Training completed.")
 
 
 class EvalFirstStepCallback(
