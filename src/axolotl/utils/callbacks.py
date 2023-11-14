@@ -64,7 +64,7 @@ class RunPodCallback(TrainerCallback):
     Logs are sent in JSON format with different keys for different types of information.
     """
 
-    def __init__(self, job_id, verbose=False, use_betterstack=True):
+    def __init__(self, job_id, verbose=False):
         """
         Initialize the RunPodCallback with the job ID for RunPod updates.
         """
@@ -86,6 +86,7 @@ class RunPodCallback(TrainerCallback):
         """
         message = json.dumps(message_content)
         self.logger.info(message, job_id=self.job_id)
+        runpod.serverless.progress_update(self.job_id, message)
 
     def on_log(self, args, state, control, logs=None, **kwargs):
         """
